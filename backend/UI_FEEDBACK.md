@@ -1,0 +1,2 @@
+- [ ] **Элемент:** `div#app > div.app > div.app-sidebar > div.app-sidebar__projects > div.project-item.is-active` -> **Комментарий:** Так же по нажатию правой кнопкой должен выпадать пункт переименовать
+- [ ] **Элемент:** `div#app > div.app > div.app-main > div.board > div.add-column-btn` -> **Комментарий:** При нажатии появляется форма для создания новой карточки, уточнения прими в чате

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tag — Табло</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root, [data-theme="dark"] {
+    --bg-deep: #0c0a14; --bg-mid: #15101f; --bg-glow: #2a1a4d;
+    --accent-teal: #2ee6c8; --accent-teal-dim: rgba(46,230,200,0.16);
+    --surface: rgba(255,255,255,0.05); --hairline: rgba(255,255,255,0.10);
+    --text-primary: #f4f2fa; --text-tertiary: #716c8c;
+    --radius-sm: 7px;
+  }
+  [data-theme="light"] {
+    --bg-deep: #eef0f6; --bg-mid: #f5f6fb; --bg-glow: #e3defc;
+    --accent-teal: #0fb8a0; --accent-teal-dim: rgba(15,184,160,0.12);
+    --surface: rgba(20,15,40,0.035); --hairline: rgba(20,15,40,0.10);
+    --text-primary: #1c1730; --text-tertiary: #8b86a3;
+    --radius-sm: 7px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: radial-gradient(circle at 15% 0%, var(--bg-glow) 0%, var(--bg-mid) 55%, var(--bg-deep) 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-primary);
+    padding: 32px;
+  }
+
+  /* ============ КОМПОНЕНТ: Tag ============ */
+  .tag {
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 2.5px 7px;
+    border-radius: 5px;
+    line-height: 1.5;
+    display: inline-block;
+  }
+  .tag--teal { background: var(--accent-teal-dim); color: var(--accent-teal); }
+  .tag--purple { background: rgba(176,110,245,0.18); color: #d4baf9; }
+  .tag--pink { background: rgba(255,94,196,0.16); color: #ff9bda; }
+  /* Доп. цвет, которого не было в оригинале, но легко добавляется по той же схеме */
+  .tag--mid { background: rgba(255,228,94,0.16); color: #f0d97a; }
+  /* ============ /КОМПОНЕНТ ============ */
+
+  .demo-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .demo-title { font-size: 20px; font-weight: 700; }
+  .demo-sub { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+  .theme-toggle {
+    background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius-sm);
+    padding: 8px 14px; cursor: pointer; color: var(--text-primary); font-size: 13px; font-weight: 600;
+  }
+  .demo-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+  .demo-block { border: 1px solid var(--hairline); border-radius: 14px; padding: 20px; background: var(--surface); margin-bottom: 16px; }
+  .demo-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--text-tertiary); margin-bottom: 12px; }
+  code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+</style>
+</head>
+<body>
+
+  <div class="demo-header">
+    <div>
+      <div class="demo-title">Tag</div>
+      <div class="demo-sub">Цветной бейдж-лейбл для категоризации задач</div>
+    </div>
+    <div class="theme-toggle" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">🌓 Тема</div>
+  </div>
+
+  <div class="demo-block">
+    <div class="demo-label">Варианты</div>
+    <div class="demo-row">
+      <span class="tag tag--teal">Документация</span>
+      <span class="tag tag--purple">Идея</span>
+      <span class="tag tag--pink">Баг</span>
+      <span class="tag tag--purple">Для агента</span>
+      <span class="tag tag--mid">На паузе</span>
+    </div>
+  </div>
+
+  <div class="demo-block">
+    <div class="demo-label">Несколько тегов вместе (как на карточке)</div>
+    <div class="demo-row">
+      <span class="tag tag--pink">Баг</span>
+      <span class="tag tag--purple">Для агента</span>
+    </div>
+  </div>
+
+  <div class="demo-block">
+    <div class="demo-label">Разметка</div>
+    <code>&lt;span class="tag tag--teal"&gt;Документация&lt;/span&gt;</code>
+  </div>
+
+</body>
+</html>

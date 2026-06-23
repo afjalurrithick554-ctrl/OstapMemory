@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Theme Tokens — Табло</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     TOKEN SYSTEM — единственный источник правды для всех
+     остальных компонентов Табло. Подключайте этот блок :root
+     первым в любом самостоятельном файле.
+     ========================================================= */
+  :root,
+  [data-theme="dark"] {
+    --bg-deep: #0c0a14;
+    --bg-mid: #15101f;
+    --bg-glow: #2a1a4d;
+
+    --accent-purple: #7c3ef0;
+    --accent-purple-light: #b06ef5;
+    --accent-purple-deep: #2e0f8f;
+
+    --accent-teal: #2ee6c8;
+    --accent-teal-dim: rgba(46,230,200,0.16);
+    --accent-teal-glow: rgba(46,230,200,0.45);
+
+    --priority-high: #ff5ec4;
+    --priority-mid: #ffe45e;
+    --priority-low: #5ef0ff;
+
+    --surface: rgba(255,255,255,0.05);
+    --surface-hover: rgba(255,255,255,0.08);
+    --surface-active: rgba(255,255,255,0.11);
+    --hairline: rgba(255,255,255,0.10);
+    --hairline-strong: rgba(255,255,255,0.16);
+
+    --text-primary: #f4f2fa;
+    --text-secondary: #a9a4c2;
+    --text-tertiary: #716c8c;
+
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 7px;
+
+    --header-bg: rgba(12,10,20,0.5);
+    --avatar-border: var(--bg-mid);
+    --task-card-bg: linear-gradient(155deg, rgba(176,110,245,0.14) 0%, rgba(124,62,240,0.10) 45%, rgba(46,15,143,0.14) 100%);
+    --task-card-border: rgba(176,110,245,0.18);
+    --task-card-border-hover: rgba(176,110,245,0.4);
+    --task-card-assignee-border: #1c1530;
+    --modal-backdrop-bg: rgba(8,6,14,0.72);
+    --modal-bg: linear-gradient(165deg, #1c1530 0%, #150f24 100%);
+    --modal-shadow: 0 30px 80px -20px rgba(0,0,0,0.6), 0 0 100px -30px rgba(124,62,240,0.4);
+    --modal-title-color: #fff;
+    --modal-sidebar-bg: rgba(0,0,0,0.12);
+    --checkbox-tick-color: #0c0a14;
+    --close-btn-hover-color: #fff;
+    --status-tab-active-color: #fff;
+  }
+
+  [data-theme="light"] {
+    --bg-deep: #eef0f6;
+    --bg-mid: #f5f6fb;
+    --bg-glow: #e3defc;
+
+    --accent-purple: #7c3ef0;
+    --accent-purple-light: #6e2fe0;
+    --accent-purple-deep: #ad8af2;
+
+    --accent-teal: #0fb8a0;
+    --accent-teal-dim: rgba(15,184,160,0.12);
+    --accent-teal-glow: rgba(15,184,160,0.35);
+
+    --priority-high: #e0398d;
+    --priority-mid: #d9a300;
+    --priority-low: #0a9fc7;
+
+    --surface: rgba(20,15,40,0.035);
+    --surface-hover: rgba(20,15,40,0.06);
+    --surface-active: rgba(20,15,40,0.09);
+    --hairline: rgba(20,15,40,0.10);
+    --hairline-strong: rgba(20,15,40,0.18);
+
+    --text-primary: #1c1730;
+    --text-secondary: #5d5878;
+    --text-tertiary: #8b86a3;
+
+    --radius-lg: 18px;
+    --radius-md: 12px;
+    --radius-sm: 7px;
+
+    --header-bg: rgba(255,255,255,0.6);
+    --avatar-border: #ffffff;
+    --task-card-bg: linear-gradient(155deg, rgba(124,62,240,0.07) 0%, rgba(124,62,240,0.04) 45%, rgba(46,15,143,0.05) 100%);
+    --task-card-border: rgba(124,62,240,0.16);
+    --task-card-border-hover: rgba(124,62,240,0.4);
+    --task-card-assignee-border: #ffffff;
+    --modal-backdrop-bg: rgba(40,35,60,0.35);
+    --modal-bg: linear-gradient(165deg, #ffffff 0%, #f7f5fc 100%);
+    --modal-shadow: 0 30px 80px -20px rgba(40,30,70,0.25), 0 0 100px -30px rgba(124,62,240,0.18);
+    --modal-title-color: #15101f;
+    --modal-sidebar-bg: rgba(20,15,40,0.025);
+    --checkbox-tick-color: #ffffff;
+    --close-btn-hover-color: #15101f;
+    --status-tab-active-color: #ffffff;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at 15% 0%, var(--bg-glow) 0%, var(--bg-mid) 55%, var(--bg-deep) 100%);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-primary);
+    padding: 32px;
+    transition: background .25s ease, color .25s ease;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  .demo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .demo-title { font-size: 20px; font-weight: 700; }
+  .demo-sub { font-size: 13px; color: var(--text-tertiary); margin-top: 4px; }
+
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-sm);
+    padding: 8px 14px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s ease;
+  }
+  .theme-toggle:hover { background: var(--surface-hover); }
+
+  .token-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+  .token-card {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .token-swatch { height: 56px; }
+  .token-meta { padding: 10px 12px; }
+  .token-name { font-size: 12px; font-weight: 600; }
+  .token-value { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; word-break: break-all; }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-tertiary);
+    margin: 32px 0 14px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="demo-header">
+    <div>
+      <div class="demo-title">Theme Tokens</div>
+      <div class="demo-sub">Базовая палитра — фундамент для всех остальных компонентов Табло</div>
+    </div>
+    <div class="theme-toggle" onclick="document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark')">
+      🌓 Переключить тему
+    </div>
+  </div>
+
+  <div class="section-title">Фон и поверхности</div>
+  <div class="token-grid">
+    <div class="token-card"><div class="token-swatch" style="background:var(--bg-deep)"></div><div class="token-meta"><div class="token-name">--bg-deep</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--bg-mid)"></div><div class="token-meta"><div class="token-name">--bg-mid</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--bg-glow)"></div><div class="token-meta"><div class="token-name">--bg-glow</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--surface)"></div><div class="token-meta"><div class="token-name">--surface</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--surface-hover)"></div><div class="token-meta"><div class="token-name">--surface-hover</div></div></div>
+  </div>
+
+  <div class="section-title">Акценты</div>
+  <div class="token-grid">
+    <div class="token-card"><div class="token-swatch" style="background:var(--accent-purple)"></div><div class="token-meta"><div class="token-name">--accent-purple</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--accent-purple-light)"></div><div class="token-meta"><div class="token-name">--accent-purple-light</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--accent-teal)"></div><div class="token-meta"><div class="token-name">--accent-teal</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--priority-high)"></div><div class="token-meta"><div class="token-name">--priority-high</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--priority-mid)"></div><div class="token-meta"><div class="token-name">--priority-mid</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--priority-low)"></div><div class="token-meta"><div class="token-name">--priority-low</div></div></div>
+  </div>
+
+  <div class="section-title">Текст</div>
+  <div class="token-grid">
+    <div class="token-card"><div class="token-swatch" style="background:var(--text-primary)"></div><div class="token-meta"><div class="token-name">--text-primary</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--text-secondary)"></div><div class="token-meta"><div class="token-name">--text-secondary</div></div></div>
+    <div class="token-card"><div class="token-swatch" style="background:var(--text-tertiary)"></div><div class="token-meta"><div class="token-name">--text-tertiary</div></div></div>
+  </div>
+
+  <div class="section-title">Радиусы</div>
+  <div class="token-grid">
+    <div class="token-card"><div class="token-meta" style="padding:18px"><div style="width:100%;height:40px;background:var(--accent-purple);border-radius:var(--radius-sm)"></div><div class="token-name" style="margin-top:8px">--radius-sm (7px)</div></div></div>
+    <div class="token-card"><div class="token-meta" style="padding:18px"><div style="width:100%;height:40px;background:var(--accent-purple);border-radius:var(--radius-md)"></div><div class="token-name" style="margin-top:8px">--radius-md (12px)</div></div></div>
+    <div class="token-card"><div class="token-meta" style="padding:18px"><div style="width:100%;height:40px;background:var(--accent-purple);border-radius:var(--radius-lg)"></div><div class="token-name" style="margin-top:8px">--radius-lg (18px)</div></div></div>
+  </div>
+
+</body>
+</html>
