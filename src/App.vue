@@ -5,6 +5,7 @@
       :activeFieldId="activeFieldId" 
       @select-field="activeFieldId = $event" 
       @delete-field="handleDeleteSpace"
+      @rename-field="handleRenameSpace"
     />
     <div class="app-main">
       <Header 
@@ -24,16 +25,20 @@
           @click="activeMobileColumn = col.id"
         >
           <span class="status-tab__dot" :style="{ background: col.color }"></span>
-          {{ col.title }} <span class="status-tab__count">{{ getTasksForColumn(col.id).length }}</span>
+          {{ col.title }} <span class="status-tab__count">{{ getCellsForColumn(col.id).length }}</span>
         </div>
       </div>
       <Board 
         v-if="activeFieldId"
         :columns="columns" 
-        :tasks="tasks" 
+        :cells="cells" 
         :activeMobileColumn="activeMobileColumn"
-        @task-click="openTask" 
-        @add-card="showCardModal = true"
+        :spaceHue="activeSpaceHue"
+        @cell-click="openCell" 
+        @add-cell="showCellModal = true"
+        @rename-cell="handleRenameCell"
+        @delete-cell="handleDeleteCell"
+        @update-cell="handleUpdateCell"
       />
       <div v-else class="no-space-selected">
         <div class="empty-state">
@@ -45,12 +50,13 @@
       </div>
     </div>
     
-    <TaskModal 
-      v-if="selectedTask" 
-      :task="selectedTask" 
-      :columnTitle="getColumnTitle(selectedTask.columnId)"
-      :columnColor="getColumnColor(selectedTask.columnId)"
-      @close="selectedTask = null" 
+    <CellModal 
+      v-if="selectedCell" 
+      :cell="selectedCell" 
+      :columnTitle="getColumnTitle(selectedCell.columnId)"
+      :columnColor="getColumnColor(selectedCell.columnId)"
+      @close="selectedCell = null"
+      @update="handleUpdateCell"
     />
 
     <SpaceModal
@@ -59,22 +65,51 @@
       @submit="handleCreateSpace"
     />
 
-    <CreateCardModal
-      v-if="showCardModal"
-      @close="showCardModal = false"
-      @submit="handleCreateCard"
+    <CreateCellModal
+      v-if="showCellModal"
+      @close="showCellModal = false"
+      @submit="handleCreateCell"
+    />
+
+    <DevFeedbackModal 
+      v-if="showDevFeedbackModal"
+      :elementPath="devFeedbackElement"
+      @close="showDevFeedbackModal = false"
+      @submit="handleDevFeedbackSubmit"
+    />
+
+    <PromptModal 
+      v-if="promptState.isOpen"
+      :message="promptState.message"
+      :initialValue="promptState.initialValue"
+      @close="handlePromptClose(null)"
+      @submit="handlePromptClose"
+    />
+
+    <ConfirmModal 
+      v-if="confirmState.isOpen"
+      :message="confirmState.message"
+      @close="handleConfirmClose(false)"
+      @submit="handleConfirmClose(true)"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted, computed } from 'vue'
+import { ref, watch, onMounted, onUnmounted, computed, provide } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
 import Board from './components/Board.vue'
-import TaskModal from './components/TaskModal.vue'
+import CellModal from './components/CellModal.vue'
 import SpaceModal from './components/SpaceModal.vue'
-import CreateCardModal from './components/CreateCardModal.vue'
+import CreateCellModal from './components/CreateCellModal.vue'
+import DevFeedbackModal from './components/DevFeedbackModal.vue'
+import PromptModal from './components/PromptModal.vue'
+import ConfirmModal from './components/ConfirmModal.vue'
+import { useEntityAction } from './composables/useEntityAction'
+import { useGlobalModals } from './composables/useGlobalModals'
+
+const { promptState, handlePromptClose, confirmState, handleConfirmClose } = useGlobalModals()
 
 // Управление темой
 const theme = ref('dark')
@@ -89,6 +124,8 @@ onMounted(() => {
 
 // Dev Mode
 const isDevMode = ref(false)
+const showDevFeedbackModal = ref(false)
+const devFeedbackElement = ref('')
 
 watch(isDevMode, (val) => {
   if (val) document.body.classList.add('dev-mode-active')
@@ -119,31 +156,39 @@ const handleGlobalClick = (e: MouseEvent) => {
   }
   const fullPath = path.join(' > ')
   
-  const comment = prompt(`Оставить комментарий для элемента:\n${fullPath}\n\nТекст комментария:`)
-  if (comment) {
-    fetch('http://localhost:3001/api/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ element: fullPath, comment })
-    }).catch(err => {
-      console.error('Failed to send feedback', err)
-      alert('Ошибка при отправке комментария')
-    })
-  }
+  devFeedbackElement.value = fullPath
+  showDevFeedbackModal.value = true
+}
+
+const handleDevFeedbackSubmit = ({ element, comment }: { element: string, comment: string }) => {
+  showDevFeedbackModal.value = false
+  fetch('http://localhost:3001/api/feedback', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ element, comment })
+  }).catch(err => {
+    console.error('Failed to send feedback', err)
+    alert('Error sending comment')
+  })
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleGlobalClick, true)
+  document.addEventListener('contextmenu', handleGlobalClick, true)
 })
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleGlobalClick, true)
+  document.removeEventListener('contextmenu', handleGlobalClick, true)
 })
 
 // Состояние полей (проектов/пространств)
 const fields = ref<any[]>([])
 const activeFieldId = ref<string | null>(null)
 const showSpaceModal = ref(false)
+
+const activeSpaceHue = computed(() => {
+  const space = fields.value.find(f => f.id === activeFieldId.value)
+  return space ? space.colorHue : 260
+})
 
 const loadSpaces = async () => {
   try {
@@ -162,9 +207,9 @@ const loadSpaces = async () => {
 
 watch(activeFieldId, (newId) => {
   if (newId) {
-    loadCards(newId)
+    loadCells(newId)
   } else {
-    tasks.value = []
+    cells.value = []
   }
 })
 
@@ -196,106 +241,183 @@ const handleCreateSpace = async (name: string) => {
   }
 }
 
-const handleDeleteSpace = async (id: string) => {
-  if (!confirm('Are you sure you want to delete this space?')) return;
-  
-  try {
-    const res = await fetch(`http://localhost:3001/api/spaces/${id}`, {
-      method: 'DELETE'
-    })
-    if (res.ok) {
-      fields.value = fields.value.filter(f => f.id !== id)
-      if (activeFieldId.value === id) {
-        activeFieldId.value = fields.value.length > 0 ? fields.value[0].id : null
-      }
-    } else {
-      console.error('Failed to delete space')
+const { renameEntity: renameSpace, deleteEntity: deleteSpace } = useEntityAction('spaces')
+
+const handleDeleteSpace = (id: string) => {
+  const space = fields.value.find(f => f.id === id)
+  if (!space) return
+  deleteSpace(id, space.name, () => {
+    fields.value = fields.value.filter(f => f.id !== id)
+    if (activeFieldId.value === id) {
+      activeFieldId.value = fields.value.length > 0 ? fields.value[0].id : null
     }
-  } catch (err) {
-    console.error('Failed to delete space request', err)
-  }
+  })
+}
+
+const handleRenameSpace = (id: string) => {
+  const space = fields.value.find(f => f.id === id)
+  if (!space) return
+  renameSpace(id, space.name, 'name', (newName) => {
+    space.name = newName
+  })
 }
 
 // Мобильное представление
 const activeMobileColumn = ref('Idea')
 
-// Выбранная задача для модалки
-const selectedTask = ref<any>(null)
-const openTask = (task: any) => {
-  selectedTask.value = task
+// Выбранная ячейка для модалки
+const selectedCell = ref<any>(null)
+const openCell = (cell: any) => {
+  selectedCell.value = cell
 }
 
-// Данные карточек (реальные из БД)
-const tasks = ref<any[]>([])
+// Данные ячеек (реальные из БД)
+const cells = ref<any[]>([])
 
-const loadCards = async (spaceId: string) => {
+const loadCells = async (spaceId: string) => {
   try {
-    const res = await fetch(`http://localhost:3001/api/spaces/${spaceId}/cards`)
+    const res = await fetch(`http://localhost:3001/api/spaces/${spaceId}/cells`)
     if (res.ok) {
-      tasks.value = await res.json()
+      cells.value = await res.json()
     }
   } catch (err) {
-    console.error('Failed to load cards', err)
+    console.error('Failed to load cells', err)
   }
 }
 
-// Создание новой карточки
-const showCardModal = ref(false)
+// Создание новой ячейки
+const showCellModal = ref(false)
 
-const handleCreateCard = async (title: string) => {
+const evaluateCellState = (cell: any) => {
+  const currentState = cell.state || 'Idea';
+  // Мы автоматизируем только переход между Idea и Ready to Work
+  if (currentState !== 'Idea' && currentState !== 'Ready to Work') {
+    return currentState;
+  }
+  
+  const hasTitle = !!cell.title && cell.title.trim() !== '';
+  const hasDescription = !!cell.description && cell.description.trim() !== '';
+  const hasDeadline = !!cell.deadline;
+  const hasAssignee = !!cell.assignee;
+  const hasAcceptanceCriteria = cell.checklist && Array.isArray(cell.checklist.items) && cell.checklist.items.length > 0;
+  
+  if (hasTitle && hasDescription && hasDeadline && hasAssignee && hasAcceptanceCriteria) {
+    return 'Ready to Work';
+  } else {
+    return 'Idea';
+  }
+}
+
+const handleCreateCell = async (title: string) => {
   if (!activeFieldId.value) return
   
+  const newCellData = { 
+    title,
+    state: 'Idea',
+    checklist: { items: [] }
+  }
+  newCellData.state = evaluateCellState(newCellData)
+
   try {
-    const res = await fetch(`http://localhost:3001/api/spaces/${activeFieldId.value}/cards`, {
+    const res = await fetch(`http://localhost:3001/api/spaces/${activeFieldId.value}/cells`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title })
+      body: JSON.stringify(newCellData)
     })
     
     if (res.ok) {
-      showCardModal.value = false
-      // Перезагружаем карточки
-      await loadCards(activeFieldId.value)
+      showCellModal.value = false
+      // Перезагружаем ячейки
+      await loadCells(activeFieldId.value)
     } else {
-      console.error('Failed to create card')
+      console.error('Failed to create cell')
     }
   } catch (err) {
-    console.error('Failed to create card request', err)
+    console.error('Failed to create cell request', err)
+  }
+}
+
+const { renameEntity: renameCell, deleteEntity: deleteCell } = useEntityAction('cells')
+
+const handleRenameCell = (cell: any) => {
+  renameCell(cell.id, cell.title, 'title', (newTitle) => {
+    cell.title = newTitle
+  })
+}
+
+const handleDeleteCell = (cell: any) => {
+  deleteCell(cell.id, cell.title, () => {
+    cells.value = cells.value.filter(t => t.id !== cell.id)
+  })
+}
+
+const handleUpdateCell = async (updatedCell: any) => {
+  // Автоматически вычисляем статус перед сохранением
+  updatedCell.state = evaluateCellState(updatedCell)
+
+  // Оптимистичное обновление UI
+  const index = cells.value.findIndex(c => c.id === updatedCell.id)
+  if (index !== -1) {
+    cells.value[index] = { ...cells.value[index], ...updatedCell }
+    if (selectedCell.value && selectedCell.value.id === updatedCell.id) {
+      selectedCell.value = cells.value[index]
+    }
+  }
+
+  try {
+    const res = await fetch(`http://localhost:3001/api/cells/${updatedCell.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedCell)
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const updatedIndex = cells.value.findIndex(c => c.id === data.id)
+      if (updatedIndex !== -1) {
+        cells.value[updatedIndex] = { ...cells.value[updatedIndex], ...data }
+        if (selectedCell.value && selectedCell.value.id === data.id) {
+          selectedCell.value = cells.value[updatedIndex]
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to update cell', err)
   }
 }
 
 // Подписываемся на событие из Board.vue или где-либо еще, 
 // но так как Board не может напрямую кидать событие сюда без проброса, 
 // мы можем прослушивать кастомное событие на document, либо добавить listener.
-// Для простоты, мы добавим event listener 'open-create-card' на уровень window.
+// Для простоты, мы добавим event listener 'open-create-cell' на уровень window.
 // Но правильнее прокинуть @add-column из Board.vue как открытие формы.
-const openCreateCard = () => {
-  showCardModal.value = true
+const openCreateCell = () => {
+  showCellModal.value = true
 }
 
 onMounted(() => {
   // Костыль, если Board.vue или Column.vue эмитят глобальные события
-  window.addEventListener('open-create-card', openCreateCard)
+  window.addEventListener('open-create-cell', openCreateCell)
 })
 
 onUnmounted(() => {
-  window.removeEventListener('open-create-card', openCreateCard)
+  window.removeEventListener('open-create-cell', openCreateCell)
 })
 
 
 // Виртуальные колонки на основе статусов карточек
 const columns = computed(() => {
-  const states = new Set(tasks.value.map(t => t.state))
+  const states = new Set(cells.value.map(t => t.state))
   
   const cols = Array.from(states).map(state => {
     let color = 'var(--accent-purple, #9d5bfe)' // По умолчанию фиолетовый
-    // В будущем можно мапить цвета: if (state === 'To Do') color = 'blue'
     
-    // Специальный цвет для 'Idea' по просьбе (Голубая с иконкой лампочки)
     let title = state
     if (state === 'Idea') {
       title = '💡 Idea'
       color = '#3b82f6' // Голубой
+    } else if (state === 'Ready to Work') {
+      title = '🚀 Готово к работе'
+      color = '#eab308' // Желтый
     }
     
     return {
@@ -305,14 +427,24 @@ const columns = computed(() => {
     }
   })
   
+  // Сортировка: Idea всегда первая
+  cols.sort((a, b) => {
+    if (a.id === 'Idea') return -1;
+    if (b.id === 'Idea') return 1;
+    return 0;
+  });
+  
   return cols
 })
 
 const getColumnTitle = (id: string) => columns.value.find(c => c.id === id)?.title
 const getColumnColor = (id: string) => columns.value.find(c => c.id === id)?.color
 
-// Для Board.vue нужен геттер карточек (фильтруем по состоянию)
-const getTasksForColumn = (state: string) => tasks.value.filter((t: any) => t.state === state)
+// Для Board.vue нужен геттер ячеек (фильтруем по состоянию)
+const getCellsForColumn = (state: string) => cells.value.filter((t: any) => t.state === state)
+
+// Provide getCellsForColumn down to Board and Columns
+provide('getCellsForColumn', getCellsForColumn)
 
 </script>
 
