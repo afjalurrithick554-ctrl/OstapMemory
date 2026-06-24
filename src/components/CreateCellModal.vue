@@ -2,18 +2,18 @@
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal">
       <div class="modal__header">
-        <h2>New Card</h2>
+        <h2>{{ parentCell ? 'Создать подзадачу для ' + parentCell.title : 'New Cell' }}</h2>
         <button class="icon-btn" @click="$emit('close')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
       <div class="modal__body">
         <div class="form-group">
-          <label>Card Title</label>
+          <label>Cell Title</label>
           <input 
             type="text" 
-            v-model="cardTitle" 
-            placeholder="Enter card title..." 
+            v-model="cellTitle" 
+            placeholder="Enter cell title..." 
             ref="inputRef"
             @keyup.enter="handleSubmit"
           />
@@ -21,7 +21,7 @@
       </div>
       <div class="modal__footer">
         <button class="btn btn--outline" @click="$emit('close')">Cancel</button>
-        <button class="btn btn--primary" :disabled="!isValid" @click="handleSubmit">Create Card</button>
+        <button class="btn btn--primary" :disabled="!isValid" @click="handleSubmit">Create Cell</button>
       </div>
     </div>
   </div>
@@ -30,12 +30,16 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 
-const cardTitle = ref('')
+const cellTitle = ref('')
 const inputRef = ref<HTMLInputElement | null>(null)
+
+const props = defineProps<{
+  parentCell?: any
+}>()
 
 const emit = defineEmits(['close', 'submit'])
 
-const isValid = computed(() => cardTitle.value.trim().length > 0)
+const isValid = computed(() => cellTitle.value.trim().length > 0)
 
 onMounted(() => {
   if (inputRef.value) {
@@ -45,7 +49,7 @@ onMounted(() => {
 
 const handleSubmit = () => {
   if (isValid.value) {
-    emit('submit', cardTitle.value.trim())
+    emit('submit', cellTitle.value.trim(), props.parentCell?.id)
   }
 }
 </script>

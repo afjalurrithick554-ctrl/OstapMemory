@@ -3,9 +3,11 @@
     <Sidebar 
       :fields="fields" 
       :activeFieldId="activeFieldId" 
+      :cells="cells"
       @select-field="activeFieldId = $event" 
       @delete-field="handleDeleteSpace"
       @rename-field="handleRenameSpace"
+      @open-cell="openCell"
     />
     <div class="app-main">
       <Header 
@@ -17,6 +19,7 @@
         @add-field="addField"
         @select-field="activeFieldId = $event"
       />
+      <GlobalTracker @open-cell="openCell" />
       <div class="status-tabs" id="status-tabs">
         <div 
           v-for="col in columns" 
@@ -57,6 +60,7 @@
       :columnColor="getColumnColor(selectedCell.columnId)"
       @close="selectedCell = null"
       @update="handleUpdateCell"
+      @create-subtask="openCreateSubtask"
     />
 
     <SpaceModal
@@ -67,7 +71,8 @@
 
     <CreateCellModal
       v-if="showCellModal"
-      @close="showCellModal = false"
+      :parentCell="parentCellForNew"
+      @close="closeCellModal"
       @submit="handleCreateCell"
     />
 
@@ -99,6 +104,7 @@
 import { ref, watch, onMounted, onUnmounted, computed, provide } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import Header from './components/Header.vue'
+import GlobalTracker from './components/GlobalTracker.vue'
 import Board from './components/Board.vue'
 import CellModal from './components/CellModal.vue'
 import SpaceModal from './components/SpaceModal.vue'
@@ -287,34 +293,62 @@ const loadCells = async (spaceId: string) => {
 
 // Создание новой ячейки
 const showCellModal = ref(false)
+const parentCellForNew = ref<any>(null)
+
+const openCreateSubtask = (parent: any) => {
+  parentCellForNew.value = parent
+  showCellModal.value = true
+}
+
+const closeCellModal = () => {
+  showCellModal.value = false
+  parentCellForNew.value = null
+}
 
 const evaluateCellState = (cell: any) => {
   const currentState = cell.state || 'Idea';
-  // Мы автоматизируем только переход между Idea и Ready to Work
-  if (currentState !== 'Idea' && currentState !== 'Ready to Work') {
-    return currentState;
+  
+  if (currentState === 'Idea' || currentState === 'Ready to Work') {
+    const hasTitle = !!cell.title && cell.title.trim() !== '';
+    const hasDescription = !!cell.description && cell.description.trim() !== '';
+    const hasDeadline = !!cell.deadline;
+    const hasAssignee = !!cell.assignee;
+    const hasAcceptanceCriteria = cell.checklist && Array.isArray(cell.checklist.items) && cell.checklist.items.length > 0;
+    
+    if (hasTitle && hasDescription && hasDeadline && hasAssignee && hasAcceptanceCriteria) {
+      return 'Ready to Work';
+    } else {
+      return 'Idea';
+    }
+  }
+
+  if (currentState === 'In Progress' || currentState === 'Review') {
+    const hasReport = !!cell.completionReport && cell.completionReport.trim() !== '';
+    const items = cell.checklist?.items || [];
+    // Если чек-листа нет, считаем не выполненным. Для старых карточек без items, если там typeof string, надо учесть?
+    // В App.vue checklist уже распарсен.
+    const allChecked = items.length > 0 && items.every((i: any) => i.done);
+    
+    if (hasReport && allChecked) {
+      return 'Review';
+    } else {
+      return 'In Progress';
+    }
   }
   
-  const hasTitle = !!cell.title && cell.title.trim() !== '';
-  const hasDescription = !!cell.description && cell.description.trim() !== '';
-  const hasDeadline = !!cell.deadline;
-  const hasAssignee = !!cell.assignee;
-  const hasAcceptanceCriteria = cell.checklist && Array.isArray(cell.checklist.items) && cell.checklist.items.length > 0;
-  
-  if (hasTitle && hasDescription && hasDeadline && hasAssignee && hasAcceptanceCriteria) {
-    return 'Ready to Work';
-  } else {
-    return 'Idea';
-  }
+  return currentState;
 }
 
-const handleCreateCell = async (title: string) => {
+const handleCreateCell = async (title: string, parentId?: number) => {
   if (!activeFieldId.value) return
   
-  const newCellData = { 
+  const newCellData: any = { 
     title,
     state: 'Idea',
     checklist: { items: [] }
+  }
+  if (parentId) {
+    newCellData.parentId = parentId
   }
   newCellData.state = evaluateCellState(newCellData)
 
@@ -326,7 +360,7 @@ const handleCreateCell = async (title: string) => {
     })
     
     if (res.ok) {
-      showCellModal.value = false
+      closeCellModal()
       // Перезагружаем ячейки
       await loadCells(activeFieldId.value)
     } else {
@@ -379,6 +413,7 @@ const handleUpdateCell = async (updatedCell: any) => {
           selectedCell.value = cells.value[updatedIndex]
         }
       }
+      window.dispatchEvent(new Event('refresh-tracker'))
     }
   } catch (err) {
     console.error('Failed to update cell', err)
@@ -406,7 +441,8 @@ onUnmounted(() => {
 
 // Виртуальные колонки на основе статусов карточек
 const columns = computed(() => {
-  const states = new Set(cells.value.map(t => t.state))
+  const visibleCells = cells.value.filter((t: any) => !t.children || t.children.length === 0)
+  const states = new Set(visibleCells.map((t: any) => t.state))
   
   const cols = Array.from(states).map(state => {
     let color = 'var(--accent-purple, #9d5bfe)' // По умолчанию фиолетовый
@@ -418,6 +454,12 @@ const columns = computed(() => {
     } else if (state === 'Ready to Work') {
       title = '🚀 Готово к работе'
       color = '#eab308' // Желтый
+    } else if (state === 'Review') {
+      title = '👀 Можно проверять'
+      color = '#f97316' // Оранжевый
+    } else if (state === 'Done') {
+      title = '✅ Завершено'
+      color = '#22c55e' // Зеленый
     }
     
     return {
@@ -427,11 +469,15 @@ const columns = computed(() => {
     }
   })
   
-  // Сортировка: Idea всегда первая
+  // Сортировка колонок
   cols.sort((a, b) => {
-    if (a.id === 'Idea') return -1;
-    if (b.id === 'Idea') return 1;
-    return 0;
+    const order = ['Idea', 'Ready to Work', 'Review', 'Done'];
+    const idxA = order.indexOf(a.id);
+    const idxB = order.indexOf(b.id);
+    if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+    if (idxA !== -1) return -1;
+    if (idxB !== -1) return 1;
+    return a.id.localeCompare(b.id);
   });
   
   return cols
@@ -440,8 +486,8 @@ const columns = computed(() => {
 const getColumnTitle = (id: string) => columns.value.find(c => c.id === id)?.title
 const getColumnColor = (id: string) => columns.value.find(c => c.id === id)?.color
 
-// Для Board.vue нужен геттер ячеек (фильтруем по состоянию)
-const getCellsForColumn = (state: string) => cells.value.filter((t: any) => t.state === state)
+// Для Board.vue нужен геттер ячеек (фильтруем по состоянию и скрываем Эпики)
+const getCellsForColumn = (state: string) => cells.value.filter((t: any) => t.state === state && (!t.children || t.children.length === 0))
 
 // Provide getCellsForColumn down to Board and Columns
 provide('getCellsForColumn', getCellsForColumn)

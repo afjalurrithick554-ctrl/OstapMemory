@@ -12,15 +12,26 @@ datasource db {
 model Space {
   id        String   @id @default(uuid())
   name      String
+  type      String   @default("TASK")
+  colorHue  Int      @default(260)
   createdAt DateTime @default(now())
-  cards     Card[]
+  cells     Cell[]
 }
 
-model Card {
-  id        Int      @id @default(autoincrement())
-  title     String
-  state     String   @default("Idea")
-  spaceId   String
-  space     Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+model Cell {
+  id                 Int       @id @default(autoincrement())
+  title              String
+  description        String?
+  checklist          String?
+  assignee           String?
+  deadline           DateTime?
+  implementationPlan String?
+  completionReport   String?
+  state              String    @default("Idea")
+  spaceId            String
+  space              Space     @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  parentId           Int?
+  parent             Cell?     @relation("CellHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children           Cell[]    @relation("CellHierarchy")
+  createdAt          DateTime  @default(now())
 }

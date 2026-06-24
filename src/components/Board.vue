@@ -4,20 +4,25 @@
       v-for="column in columns" 
       :key="column.id" 
       :column="column"
-      :tasks="getTasksForColumn(column.id)"
+      :cells="getCellsForColumn(column.id)"
       :isActiveMobile="activeMobileColumn === column.id"
-      @task-click="$emit('task-click', $event)"
+      :spaceHue="spaceHue"
+      @cell-click="$emit('cell-click', $event)"
+      @rename-cell="$emit('rename-cell', $event)"
+      @delete-cell="$emit('delete-cell', $event)"
+      @update-cell="$emit('update-cell', $event)"
+      @add-cell="$emit('add-cell', column.id)"
     />
-    <div class="add-column-btn" @click="$emit('add-card')">
-      <span class="icon">+</span> Add card
+    <div class="add-column-btn" @click="$emit('add-cell')" v-if="cells.length === 0">
+      <span class="icon">+</span> Add cell
     </div>
   </div>
   <div class="board-empty" v-else>
     <div class="empty-state">
       <div class="empty-icon">📝</div>
       <h3>This space is empty</h3>
-      <p>Create your first card to get started!</p>
-      <button class="btn btn-primary" @click="$emit('add-card')">+ Add card</button>
+      <p>Create your first cell to get started!</p>
+      <button class="btn btn-primary" @click="$emit('add-cell')">+ Add cell</button>
     </div>
   </div>
 </template>
@@ -27,14 +32,15 @@ import Column from './Column.vue'
 
 const props = defineProps<{
   columns: Array<{ id: string, title: string, color: string }>
-  tasks: Array<any>
+  cells: Array<any>
   activeMobileColumn?: string
+  spaceHue?: number
 }>()
 
-defineEmits(['task-click', 'add-card'])
+defineEmits(['cell-click', 'add-cell', 'rename-cell', 'delete-cell', 'update-cell'])
 
-function getTasksForColumn(columnId: string) {
-  return props.tasks.filter(t => t.columnId === columnId)
+function getCellsForColumn(columnId: string) {
+  return props.cells.filter(t => t.state === columnId)
 }
 </script>
 

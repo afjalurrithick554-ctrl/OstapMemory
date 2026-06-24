@@ -8,7 +8,23 @@
       </div>
     </div>
     <div class="cell__seo-group">
-      <div class="cell__title">{{ cell.title }}</div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div class="cell__title">{{ cell.title }}</div>
+        
+        <div v-if="(cell.state === 'Ready to Work' || cell.state === 'In Progress') && cell.implementationPlan" class="in-progress-toggle" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;" @click.stop>
+          <span style="font-size: 11px; color: var(--text-secondary); font-weight: 500; white-space: nowrap;">В работу</span>
+          <label class="switch switch-sm">
+            <input type="checkbox" :checked="cell.state === 'In Progress'" @change="toggleInProgress">
+            <span class="slider round"></span>
+          </label>
+        </div>
+        
+        <div v-if="cell.state === 'Review'" class="review-toggle" style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;" @click.stop>
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-primary); font-weight: 500; cursor: pointer; background: rgba(34, 197, 94, 0.1); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.2); transition: background 0.2s;">
+            <input type="checkbox" @change="markDone" style="cursor: pointer; width: 12px; height: 12px; accent-color: #22c55e;" /> Проверено
+          </label>
+        </div>
+      </div>
       
       <div class="cell__description-preview">
         <div v-if="isEditingDesc" class="desc-editor" @click.stop>
@@ -88,6 +104,7 @@ const props = defineProps<{
     assignees?: Array<{ id: string | number, name: string, avatar: string }>
     assignee?: string
     deadline?: string | Date
+    implementationPlan?: string
   }
   isDragging?: boolean
 }>()
@@ -115,6 +132,16 @@ const saveDescription = () => {
   if (editDescValue.value !== props.cell.description) {
     emit('update-cell', { ...props.cell, description: editDescValue.value })
   }
+}
+
+const toggleInProgress = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const newState = target.checked ? 'In Progress' : 'Ready to Work';
+  emit('update-cell', { ...props.cell, state: newState });
+}
+
+const markDone = (e: Event) => {
+  emit('update-cell', { ...props.cell, state: 'Done' });
 }
 
 const getDone = (checklist: any) => {
@@ -304,5 +331,50 @@ const openChecklistMenu = (e: MouseEvent) => {
   height: 100%;
   border-radius: 2px;
   transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+/* Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 30px;
+  height: 16px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 10px;
+  width: 10px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-secondary);
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: #22c55e;
+  border-color: #22c55e;
+}
+input:checked + .slider:before {
+  transform: translateX(14px);
+  background-color: white;
+}
+.slider.round {
+  border-radius: 20px;
+}
+.slider.round:before {
+  border-radius: 50%;
 }
 </style>

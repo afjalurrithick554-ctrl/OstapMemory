@@ -15,7 +15,16 @@
       
       <div class="cell-modal__body">
         <div class="cell-modal__main">
-          <h2 class="cell-modal__title">{{ cell?.title || 'Loading...' }}</h2>
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+            <h2 class="cell-modal__title" style="margin: 0;">{{ cell?.title || 'Loading...' }}</h2>
+            <div v-if="(cell?.state === 'Ready to Work' || cell?.state === 'In Progress') && planValue" class="in-progress-toggle" style="display: flex; align-items: center; gap: 8px;">
+              <span style="font-size: 13px; color: var(--text-secondary); font-weight: 500;">Отправить в работу</span>
+              <label class="switch">
+                <input type="checkbox" :checked="cell?.state === 'In Progress'" @change="toggleInProgress">
+                <span class="slider round"></span>
+              </label>
+            </div>
+          </div>
           
           <div class="cell-modal__description">
             <textarea 
@@ -56,7 +65,52 @@
             </div>
           </div>
           
-          <div class="comments-block">
+          <div class="subtasks-block" style="margin-top: 24px;">
+            <div class="section-label">Подзадачи</div>
+            <div 
+              v-for="child in (cell?.children || [])" 
+              :key="child.id" 
+              class="subtask-item"
+            >
+              <span class="status-indicator" :class="'status-' + child.state.toLowerCase().replace(/ /g, '-')"></span>
+              {{ child.title }}
+            </div>
+            <button class="btn btn--secondary" @click="$emit('create-subtask', cell)" style="margin-top: 8px; padding: 6px 12px; font-size: 13px; border-radius: 4px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer;">+ Добавить подзадачу</button>
+          </div>
+          
+          <div class="plan-block" v-if="cell?.state === 'Ready to Work' || cell?.state === 'In Progress' || cell?.state === 'Review' || cell?.state === 'Done'" style="margin-top: 24px;">
+            <div class="section-label">План реализации</div>
+            <textarea 
+              v-model="planValue" 
+              @blur="updateField('implementationPlan', planValue)"
+              placeholder="Опишите план реализации или загрузите текстовый файл..."
+              class="modal-textarea"
+              rows="6"
+            ></textarea>
+            <div class="plan-actions" style="margin-top: 8px; display: flex; gap: 8px;">
+              <button class="save-desc-btn" @click="updateField('implementationPlan', planValue)">Сохранить</button>
+              <input type="file" ref="fileInput" @change="uploadPlanFile" accept=".txt,.md,.json,.csv" style="display: none;" />
+              <button class="btn btn--secondary" @click="$refs.fileInput.click()" style="padding: 6px 12px; font-size: 13px; border-radius: 4px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer;">📎 Загрузить файл</button>
+            </div>
+          </div>
+          
+          <div class="report-block" v-if="cell?.state === 'In Progress' || cell?.state === 'Review' || cell?.state === 'Done'" style="margin-top: 24px;">
+            <div class="section-label">Отчет о выполнении</div>
+            <textarea 
+              v-model="reportValue" 
+              @blur="updateField('completionReport', reportValue)"
+              placeholder="Опишите результат выполнения или загрузите файл с отчетом..."
+              class="modal-textarea"
+              rows="6"
+            ></textarea>
+            <div class="plan-actions" style="margin-top: 8px; display: flex; gap: 8px;">
+              <button class="save-desc-btn" @click="updateField('completionReport', reportValue)">Сохранить</button>
+              <input type="file" ref="reportFileInput" @change="uploadReportFile" accept=".txt,.md,.json,.csv" style="display: none;" />
+              <button class="btn btn--secondary" @click="$refs.reportFileInput.click()" style="padding: 6px 12px; font-size: 13px; border-radius: 4px; border: 1px solid var(--border-color); background: transparent; color: var(--text-primary); cursor: pointer;">📎 Загрузить файл</button>
+            </div>
+          </div>
+          
+          <div class="comments-block" style="margin-top: 24px;">
             <div class="section-label">Discussion</div>
             <div class="comment-input-row">
               <img src="https://i.pravatar.cc/150?img=33" alt="">
@@ -106,15 +160,19 @@ const props = defineProps<{
   columnColor?: string
 }>()
 
-const emit = defineEmits(['close', 'update'])
+const emit = defineEmits(['close', 'update', 'create-subtask'])
 
 // Локальное состояние для редактирования
 const descValue = ref(props.cell?.description || '')
+const planValue = ref(props.cell?.implementationPlan || '')
+const reportValue = ref(props.cell?.completionReport || '')
 const selectedAssignee = ref(props.cell?.assignee || '')
 const deadlineValue = ref(props.cell?.deadline ? new Date(props.cell.deadline).toISOString().substring(0, 10) : '')
 
 watch(() => props.cell, (newCell) => {
   descValue.value = newCell?.description || ''
+  planValue.value = newCell?.implementationPlan || ''
+  reportValue.value = newCell?.completionReport || ''
   selectedAssignee.value = newCell?.assignee || ''
   deadlineValue.value = newCell?.deadline ? new Date(newCell.deadline).toISOString().substring(0, 10) : ''
 }, { deep: true })
@@ -172,6 +230,69 @@ const assigneesList = [
   { id: 'boba', name: 'Boba', avatar: '🐒' },
   { id: 'ostap', name: 'Ostap', avatar: '💻' }
 ]
+
+const fileInput = ref<HTMLInputElement | null>(null)
+const reportFileInput = ref<HTMLInputElement | null>(null)
+
+const uploadPlanFile = async (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+  const file = target.files[0];
+  
+  const formData = new FormData();
+  formData.append('planFile', file);
+  
+  try {
+    const res = await fetch('http://localhost:3001/api/cells/upload-plan', {
+      method: 'POST',
+      body: formData
+    });
+    if (res.ok) {
+      const data = await res.json();
+      planValue.value = data.content;
+      updateField('implementationPlan', planValue.value);
+    } else {
+      alert('Ошибка при загрузке файла');
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (fileInput.value) fileInput.value.value = '';
+  }
+}
+
+const uploadReportFile = async (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  if (!target.files || target.files.length === 0) return;
+  const file = target.files[0];
+  
+  const formData = new FormData();
+  formData.append('reportFile', file);
+  
+  try {
+    const res = await fetch('http://localhost:3001/api/cells/upload-report', {
+      method: 'POST',
+      body: formData
+    });
+    if (res.ok) {
+      const data = await res.json();
+      reportValue.value = data.content;
+      updateField('completionReport', reportValue.value);
+    } else {
+      alert('Ошибка при загрузке файла');
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    if (reportFileInput.value) reportFileInput.value.value = '';
+  }
+}
+
+const toggleInProgress = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  const newState = target.checked ? 'In Progress' : 'Ready to Work';
+  updateField('state', newState);
+}
 </script>
 
 <style scoped>
@@ -223,6 +344,7 @@ const assigneesList = [
   color: var(--text-primary);
   font-size: 14px;
   margin-top: 4px;
+  color-scheme: var(--color-scheme, dark);
 }
 
 .modal-select:focus, .modal-input:focus {
@@ -270,4 +392,72 @@ const assigneesList = [
   opacity: 1 !important;
   color: #ef4444;
 }
+
+/* Switch Styles */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+}
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 14px;
+  width: 14px;
+  left: 2px;
+  bottom: 2px;
+  background-color: var(--text-secondary);
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: #22c55e;
+  border-color: #22c55e;
+}
+input:checked + .slider:before {
+  transform: translateX(16px);
+  background-color: white;
+}
+.slider.round {
+  border-radius: 20px;
+}
+.slider.round:before {
+  border-radius: 50%;
+}
+.subtask-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin-bottom: 4px;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+}
+.status-indicator.status-done { background: #22c55e; }
+.status-indicator.status-review { background: #f97316; }
+.status-indicator.status-in-progress { background: #3b82f6; }
+.status-indicator.status-ready-to-work { background: #eab308; }
+.status-indicator.status-idea { background: #9d5bfe; }
 </style>
