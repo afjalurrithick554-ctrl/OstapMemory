@@ -1,0 +1,46 @@
+# ============================================================
+# Dev Dockerfile для Open Notebook
+# Устанавливает все зависимости (Python + Node.js),
+# но НЕ собирает продакшн-бандл — сервисы запускаются
+# через команды в docker-compose.yml с hot-reload.
+# ============================================================
+FROM python:3.12-slim-trixie
+
+# --- Системные зависимости ---
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    build-essential \
+    ffmpeg \
+    && curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# --- Python-зависимости ---
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV UV_LINK_MODE=copy
+
+WORKDIR /app
+
+# Копируем файлы зависимостей для кэширования слоя
+COPY pyproject.toml uv.lock ./
+COPY open_notebook/__init__.py ./open_notebook/__init__.py
+
+# Устанавливаем Python-зависимости
+RUN uv sync --frozen
+
+# --- Node.js зависимости для фронтенда ---
+COPY frontend/package.json frontend/package-lock.json ./frontend/
+RUN cd frontend && npm ci
+
+# Копируем остальной исходный код
+COPY . /app
+
+# Pre-download tiktoken encoding
+ENV TIKTOKEN_CACHE_DIR=/app/tiktoken-cache
+RUN mkdir -p /app/tiktoken-cache && \
+    .venv/bin/python -c "import tiktoken; tiktoken.get_encoding('o200k_base')"
+
+EXPOSE 5055 3000
