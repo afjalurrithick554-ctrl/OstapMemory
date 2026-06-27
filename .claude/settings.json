@@ -1,0 +1,20 @@
+{
+  "ignore_patterns": [
+    "**/.next",
+    "**/node_modules",
+    "**/.git",
+    "**/__pycache__",
+    "**/.venv",
+    "**/dist",
+    "**/build",
+    "**/.pytest_cache"
+  ],
+  "skills": {
+    "ui-feedback-tracker": {
+      "description": "Работает с UI_FEEDBACK.md — показывает невыполненные задачи, отмечает выполненные строго ПОСЛЕ их реализации"
+    },
+    "ostapmemory-context-updater": {
+      "description": "Обновляет PROJECT_CONTEXT.md с результатами сессии и автоматически коммитит"
+    }
+  }
+}
