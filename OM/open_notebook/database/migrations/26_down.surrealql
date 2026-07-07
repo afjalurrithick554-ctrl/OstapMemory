@@ -1,0 +1,3 @@
+-- Откат миграции 26.
+REMOVE FIELD IF EXISTS space_id ON TABLE source;
+REMOVE FIELD IF EXISTS space_id ON TABLE note;

@@ -1,0 +1,8 @@
+-- Migration 29: поле «Внесённые замечания» (review_notes) у задачи.
+-- Заполняется пользователем при возврате задачи из «Можно проверять» (3) в
+-- «В работе» (2). Таблица notebook SCHEMAFULL — без объявления поле молча
+-- отбрасывается при save().
+-- Объект: { text, url, file: {name, path, size} | null, created }.
+-- FLEXIBLE — как goal_file/implementation_plan: иначе SCHEMAFULL отбрасывает
+-- необъявленные вложенные ключи объекта.
+DEFINE FIELD IF NOT EXISTS review_notes ON TABLE notebook FLEXIBLE TYPE option<object>;

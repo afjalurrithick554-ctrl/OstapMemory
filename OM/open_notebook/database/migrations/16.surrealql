@@ -1,0 +1,8 @@
+-- Migration 16: Add notebook type, state, and lifecycle fields to notebook table
+
+DEFINE FIELD IF NOT EXISTS notebook_type ON TABLE notebook TYPE string DEFAULT "cell";
+DEFINE FIELD IF NOT EXISTS state ON TABLE notebook TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS implementation_plan ON TABLE notebook FLEXIBLE TYPE option<object>;
+DEFINE FIELD IF NOT EXISTS deadline ON TABLE notebook TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS assigned ON TABLE notebook TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS checklist ON TABLE notebook TYPE option<array>;

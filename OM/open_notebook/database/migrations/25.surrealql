@@ -1,0 +1,4 @@
+-- Migration 25: goal_file по-настоящему FLEXIBLE. В 24 DEFINE FIELD без OVERWRITE
+-- не переопределил уже существующее поле, поэтому сначала REMOVE, затем DEFINE.
+REMOVE FIELD IF EXISTS goal_file ON TABLE notebook;
+DEFINE FIELD goal_file ON TABLE notebook FLEXIBLE TYPE option<object>;

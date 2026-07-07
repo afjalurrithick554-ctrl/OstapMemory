@@ -1,0 +1,11 @@
+-- Migration 30: отчёт о выполнении (report) — из строки в журнал записей.
+-- Было: option<string> (миграция 18). Стало: append-журнал массива записей
+-- { author, at, text } — кто, когда и что зафиксировал. Таблица notebook
+-- SCHEMAFULL, поэтому массив объектов объявляем FLEXIBLE (иначе вложенные
+-- ключи молча отбрасываются при save()), как implementation_plan/review_notes.
+-- Порядок: сначала снимаем строгий тип строки, затем конвертируем легаси-строки
+-- в одну запись журнала, затем переобъявляем поле массивом.
+REMOVE FIELD IF EXISTS report ON TABLE notebook;
+UPDATE notebook SET report = [{ author: NONE, at: created, text: report }] WHERE type::is::string(report) AND report != "";
+UPDATE notebook SET report = [] WHERE type::is::string(report);
+DEFINE FIELD IF NOT EXISTS report ON TABLE notebook FLEXIBLE TYPE option<array>;

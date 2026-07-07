@@ -1,0 +1,13 @@
+-- Migration 31: порядок дефолтных пространств в сайдбаре.
+-- Требование (dev-feedback 93a82767): Админ-панель, Поиск, Ячейки, Источники,
+-- Заметки, Прогресс, далее — создаваемые пользователем пространства.
+-- Архив скрыт (hidden), держим его после дефолтных, чтобы новые проекты
+-- (order = max+1) вставали за всеми системными.
+
+UPDATE space SET order = 0 WHERE slug = "admin";
+UPDATE space SET order = 1 WHERE slug = "search";
+UPDATE space SET order = 2 WHERE slug = "shortcuts";
+UPDATE space SET order = 3 WHERE slug = "sources";
+UPDATE space SET order = 4 WHERE slug = "notes";
+UPDATE space SET order = 5 WHERE slug = "progress";
+UPDATE space SET order = 6 WHERE slug = "archive";

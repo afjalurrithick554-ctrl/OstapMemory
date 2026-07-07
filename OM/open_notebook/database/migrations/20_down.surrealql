@@ -1,0 +1,4 @@
+-- Migration 20 rollback: убрать done и completed_at с таблицы notebook.
+
+REMOVE FIELD IF EXISTS done ON TABLE notebook;
+REMOVE FIELD IF EXISTS completed_at ON TABLE notebook;

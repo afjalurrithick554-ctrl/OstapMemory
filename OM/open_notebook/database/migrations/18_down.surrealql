@@ -1,0 +1,5 @@
+-- Migration 18 rollback: убрать parent_id, report, accepted с таблицы notebook
+
+REMOVE FIELD IF EXISTS parent_id ON TABLE notebook;
+REMOVE FIELD IF EXISTS report ON TABLE notebook;
+REMOVE FIELD IF EXISTS accepted ON TABLE notebook;

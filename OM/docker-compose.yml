@@ -1,0 +1,72 @@
+# OstapMemory — независимый стек (Vue 3). Заменяет старый Open Notebook.
+# Порты совпадают со старыми (8502/5055/8000), чтобы ярлык работал как раньше.
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:v2
+    command: start --log info --user ${SURREAL_USER:-root} --pass ${SURREAL_PASSWORD:-root} rocksdb:/mydata/mydatabase.db
+    user: root
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./surreal_data:/mydata
+    environment:
+      - SURREAL_EXPERIMENTAL_GRAPHQL=true
+    restart: always
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    ports:
+      - "5055:5055"
+    environment:
+      # ВАЖНО: смени на свой секрет перед реальным использованием
+      - OPEN_NOTEBOOK_ENCRYPTION_KEY=${OPEN_NOTEBOOK_ENCRYPTION_KEY:-change-me-to-a-secret-string}
+      - SURREAL_URL=ws://surrealdb:8000/rpc
+      - SURREAL_USER=${SURREAL_USER:-root}
+      - SURREAL_PASSWORD=${SURREAL_PASSWORD:-root}
+      - SURREAL_NAMESPACE=ostap_memory
+      - SURREAL_DATABASE=ostap_memory
+      - API_HOST=0.0.0.0
+      - API_PORT=5055
+      - API_RELOAD=false
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - surrealdb
+    restart: always
+
+  # Воркер очереди команд (surreal_commands): обработка источников, эмбеддинги, подкасты.
+  # Без него источники с async_processing зависают в статусе "new".
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    command: ["surreal-commands-worker", "start", "-i", "commands.source_commands,commands.embedding_commands,commands.podcast_commands"]
+    environment:
+      - OPEN_NOTEBOOK_ENCRYPTION_KEY=${OPEN_NOTEBOOK_ENCRYPTION_KEY:-change-me-to-a-secret-string}
+      - SURREAL_URL=ws://surrealdb:8000/rpc
+      - SURREAL_USER=${SURREAL_USER:-root}
+      - SURREAL_PASSWORD=${SURREAL_PASSWORD:-root}
+      - SURREAL_NAMESPACE=ostap_memory
+      - SURREAL_DATABASE=ostap_memory
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - surrealdb
+      - backend
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "8502:8502"
+    volumes:
+      # Монтируем код для hot-reload, node_modules оставляем из образа
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    restart: always

@@ -1,0 +1,8 @@
+-- Migration 16 rollback: remove notebook type, state, and lifecycle fields
+
+REMOVE FIELD IF EXISTS notebook_type ON TABLE notebook;
+REMOVE FIELD IF EXISTS state ON TABLE notebook;
+REMOVE FIELD IF EXISTS implementation_plan ON TABLE notebook;
+REMOVE FIELD IF EXISTS deadline ON TABLE notebook;
+REMOVE FIELD IF EXISTS assigned ON TABLE notebook;
+REMOVE FIELD IF EXISTS checklist ON TABLE notebook;

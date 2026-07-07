@@ -1,0 +1,4 @@
+-- Migration 26: привязка источников и заметок к проекту (space_id).
+-- Таблицы source и note SCHEMAFULL — без объявления поле молча отбрасывается при save().
+DEFINE FIELD IF NOT EXISTS space_id ON TABLE source TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS space_id ON TABLE note TYPE option<string>;

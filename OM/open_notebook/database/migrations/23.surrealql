@@ -1,0 +1,25 @@
+-- Migration 23: поле «Цель» (текст + файл) и ручной порядок карточек; описания
+-- пространств и переименование дефолтного «Ярлыки» → «Ячейки».
+-- Таблицы notebook и space SCHEMAFULL — новые поля нужно объявить, иначе save() их отбросит.
+
+-- notebook: «Цель ячейки/задачи» вместо обязательного чек-листа (простое поле).
+-- goal — текст цели; goal_file — метаданные приложенного файла {name, path, size};
+-- sort_order — ручной порядок карточки внутри её группы состояния (вертикальный DnD).
+-- (order — зарезервированное слово SurrealQL, поэтому sort_order.)
+DEFINE FIELD IF NOT EXISTS goal ON TABLE notebook TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS goal_file ON TABLE notebook TYPE option<object>;
+DEFINE FIELD IF NOT EXISTS sort_order ON TABLE notebook TYPE option<int> DEFAULT 0;
+
+-- space: описание пространства (для дефолтных заполняем ниже, для проектов пишет пользователь).
+DEFINE FIELD IF NOT EXISTS description ON TABLE space TYPE option<string>;
+
+-- «Ярлыки» — это и есть «Ячейки»; отдельного хаба больше нет, оставляем одно пространство.
+UPDATE space SET name = "Ячейки" WHERE slug = "shortcuts";
+
+-- Дефолтные описания системных пространств.
+UPDATE space SET description = "Здесь все ячейки и их подзадачи." WHERE slug = "shortcuts";
+UPDATE space SET description = "Полнотекстовый и семантический поиск по всем материалам." WHERE slug = "search";
+UPDATE space SET description = "Трекер наших задач: состояние и движение по этапам." WHERE slug = "progress";
+UPDATE space SET description = "Все загруженные источники — файлы и ссылки." WHERE slug = "sources";
+UPDATE space SET description = "Все заметки по ячейкам и задачам." WHERE slug = "notes";
+UPDATE space SET description = "Завершённые и заархивированные карточки." WHERE slug = "archive";

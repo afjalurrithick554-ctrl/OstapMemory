@@ -1,0 +1,6 @@
+-- Откат миграции 23.
+UPDATE space SET name = "Ярлыки" WHERE slug = "shortcuts";
+REMOVE FIELD IF EXISTS description ON TABLE space;
+REMOVE FIELD IF EXISTS goal ON TABLE notebook;
+REMOVE FIELD IF EXISTS goal_file ON TABLE notebook;
+REMOVE FIELD IF EXISTS sort_order ON TABLE notebook;

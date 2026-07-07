@@ -1,0 +1,6 @@
+-- Migration 30 rollback: вернуть report к строковому типу.
+-- Журнал-массив не разворачиваем обратно в текст (best-effort): сбрасываем в NONE,
+-- затем переобъявляем поле строкой, как было в миграции 18.
+REMOVE FIELD IF EXISTS report ON TABLE notebook;
+UPDATE notebook SET report = NONE WHERE type::is::array(report);
+DEFINE FIELD IF NOT EXISTS report ON TABLE notebook TYPE option<string>;

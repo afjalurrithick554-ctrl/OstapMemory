@@ -1,0 +1,8 @@
+frontend
+surreal_data
+component-templates
+data/sqlite-db
+**/__pycache__
+*.pyc
+.venv
+vue3-rewrite-plan.md

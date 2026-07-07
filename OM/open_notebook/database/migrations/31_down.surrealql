@@ -1,0 +1,10 @@
+-- Откат миграции 31: вернуть исходный порядок дефолтных пространств
+-- (как в миграциях 21 и 27).
+
+UPDATE space SET order = 0 WHERE slug = "shortcuts";
+UPDATE space SET order = 1 WHERE slug = "search";
+UPDATE space SET order = 2 WHERE slug = "progress";
+UPDATE space SET order = 3 WHERE slug = "sources";
+UPDATE space SET order = 4 WHERE slug = "notes";
+UPDATE space SET order = 5 WHERE slug = "archive";
+UPDATE space SET order = 6 WHERE slug = "admin";

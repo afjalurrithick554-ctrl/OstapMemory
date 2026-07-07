@@ -1,0 +1,5 @@
+-- Migration 22: space_id на notebook — привязка карточки к пользовательскому проекту (B7).
+-- Таблица notebook SCHEMAFULL, поэтому поле нужно объявить, иначе save() его отбросит.
+-- NONE (нет привязки) = глобальная карточка, видна только в «Ячейках».
+
+DEFINE FIELD IF NOT EXISTS space_id ON TABLE notebook TYPE option<string>;

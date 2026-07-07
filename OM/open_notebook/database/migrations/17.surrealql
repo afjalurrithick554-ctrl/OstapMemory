@@ -1,0 +1,4 @@
+-- Migration 17: Fix checklist field - add FLEXIBLE to allow arrays of objects in SCHEMAFULL mode
+
+REMOVE FIELD IF EXISTS checklist ON TABLE notebook;
+DEFINE FIELD checklist ON TABLE notebook FLEXIBLE TYPE option<array>;

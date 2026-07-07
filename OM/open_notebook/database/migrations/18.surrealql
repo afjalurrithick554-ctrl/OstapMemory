@@ -1,0 +1,7 @@
+-- Migration 18: parent_id (иерархия подзадач) + поля состояний 3/4 (report, accepted)
+-- Таблица notebook — SCHEMAFULL, поэтому неопределённые поля молча отбрасываются.
+-- parent_id раньше не объявлялся => подзадачи теряли привязку к родителю (баг иерархии).
+
+DEFINE FIELD IF NOT EXISTS parent_id ON TABLE notebook TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS report ON TABLE notebook TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS accepted ON TABLE notebook TYPE option<bool> DEFAULT false;

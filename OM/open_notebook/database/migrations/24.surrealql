@@ -1,0 +1,3 @@
+-- Migration 24: goal_file должен быть FLEXIBLE, иначе SCHEMAFULL отбрасывает
+-- необъявленные вложенные ключи объекта ({name, path, size}) при save().
+DEFINE FIELD goal_file ON TABLE notebook FLEXIBLE TYPE option<object>;

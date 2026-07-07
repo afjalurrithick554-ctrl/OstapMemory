@@ -1,0 +1,3 @@
+-- Откат миграции 28: убрать поля контейнера пространства.
+REMOVE FIELD IF EXISTS is_container ON TABLE notebook;
+REMOVE FIELD IF EXISTS container_id ON TABLE space;

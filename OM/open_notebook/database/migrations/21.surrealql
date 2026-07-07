@@ -1,0 +1,16 @@
+-- Migration 21: таблица space (пространства сайдбара) + сид 6 дефолтных пространств.
+-- kind=default — неудаляемые системные; kind=project — пользовательские проекты.
+
+DEFINE TABLE IF NOT EXISTS space SCHEMAFULL;
+DEFINE FIELD IF NOT EXISTS name ON TABLE space TYPE string;
+DEFINE FIELD IF NOT EXISTS kind ON TABLE space TYPE string DEFAULT "project";
+DEFINE FIELD IF NOT EXISTS slug ON TABLE space TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS icon ON TABLE space TYPE option<string>;
+DEFINE FIELD IF NOT EXISTS removable ON TABLE space TYPE bool DEFAULT true;
+DEFINE FIELD IF NOT EXISTS hidden ON TABLE space TYPE bool DEFAULT false;
+DEFINE FIELD IF NOT EXISTS order ON TABLE space TYPE int DEFAULT 0;
+DEFINE FIELD IF NOT EXISTS created ON space DEFAULT time::now() VALUE $before OR time::now();
+DEFINE FIELD IF NOT EXISTS updated ON space DEFAULT time::now() VALUE time::now();
+
+-- Сид дефолтных пространств (миграция выполняется однократно, версия отслеживается).
+INSERT INTO space [ { name: "Ярлыки", kind: "default", slug: "shortcuts", icon: "Bookmark", removable: false, hidden: false, order: 0 }, { name: "Поиск", kind: "default", slug: "search", icon: "Search", removable: false, hidden: false, order: 1 }, { name: "Прогресс", kind: "default", slug: "progress", icon: "Activity", removable: false, hidden: false, order: 2 }, { name: "Источники", kind: "default", slug: "sources", icon: "FileText", removable: false, hidden: false, order: 3 }, { name: "Заметки", kind: "default", slug: "notes", icon: "StickyNote", removable: false, hidden: false, order: 4 }, { name: "Архив", kind: "default", slug: "archive", icon: "Archive", removable: false, hidden: true, order: 5 } ];

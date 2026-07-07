@@ -1,0 +1,3 @@
+-- Откат миграции 25.
+REMOVE FIELD IF EXISTS goal_file ON TABLE notebook;
+DEFINE FIELD goal_file ON TABLE notebook TYPE option<object>;

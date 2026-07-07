@@ -1,0 +1,4 @@
+-- Migration 17 rollback: revert checklist to non-FLEXIBLE
+
+REMOVE FIELD IF EXISTS checklist ON TABLE notebook;
+DEFINE FIELD checklist ON TABLE notebook TYPE option<array>;

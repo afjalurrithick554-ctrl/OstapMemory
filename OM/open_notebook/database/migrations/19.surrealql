@@ -1,0 +1,5 @@
+-- Migration 19: is_admin (административная ячейка)
+-- Таблица notebook — SCHEMAFULL, поэтому неопределённые поля молча отбрасываются.
+-- Без этого объявления флаг is_admin не сохранялся бы при save().
+
+DEFINE FIELD IF NOT EXISTS is_admin ON TABLE notebook TYPE option<bool> DEFAULT false;

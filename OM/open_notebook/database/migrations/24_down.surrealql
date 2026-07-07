@@ -1,0 +1,2 @@
+-- Откат миграции 24.
+DEFINE FIELD goal_file ON TABLE notebook TYPE option<object>;

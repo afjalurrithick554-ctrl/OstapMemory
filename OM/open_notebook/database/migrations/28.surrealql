@@ -1,0 +1,10 @@
+-- Migration 28: у пространства появляется собственный «контейнер» — скрытый
+-- notebook, к которому привязаны источники/заметки/чат пространства (как у ячейки).
+-- Таблицы notebook и space SCHEMAFULL — новые поля нужно объявить, иначе save() их отбросит.
+
+-- notebook.is_container — служебная ячейка-контейнер пространства. Не показывается
+-- ни в «Ячейках», ни в досках пространств; хранит материалы уровня пространства.
+DEFINE FIELD IF NOT EXISTS is_container ON TABLE notebook TYPE bool DEFAULT false;
+
+-- space.container_id — ссылка на контейнер-notebook пространства (создаётся лениво).
+DEFINE FIELD IF NOT EXISTS container_id ON TABLE space TYPE option<string>;

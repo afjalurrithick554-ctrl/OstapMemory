@@ -1,0 +1,9 @@
+-- Migration 20: тумблер done (гейт 2→3) и completed_at (дата входа в «Завершено», база архива).
+-- Таблица notebook — SCHEMAFULL, поэтому неопределённые поля молча отбрасываются при save().
+
+DEFINE FIELD IF NOT EXISTS done ON TABLE notebook TYPE option<bool> DEFAULT false;
+DEFINE FIELD IF NOT EXISTS completed_at ON TABLE notebook TYPE option<string>;
+
+-- Бэкфилл: у существующих задач с непустым планом считаем план финализированным,
+-- иначе новая логика (finalized обязателен для перехода 1→2) откатила бы их назад.
+UPDATE notebook SET implementation_plan.finalized = true WHERE implementation_plan != NONE AND implementation_plan.text != NONE AND implementation_plan.text != "";

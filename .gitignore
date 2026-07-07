@@ -22,11 +22,18 @@ dist-ssr/
 # === Базы данных (runtime, восстанавливаются) ===
 surreal_data/
 notebook_data/
+sqlite-db/
+*.sqlite
 *.sst
 *.db/
 LOG.old.*
 MANIFEST-*
 OPTIONS-*
+
+# === Кэши и runtime-данные приложения ===
+tiktoken-cache/
+uploads/
+*.tsbuildinfo
 
 # === Секреты и окружение ===
 .env

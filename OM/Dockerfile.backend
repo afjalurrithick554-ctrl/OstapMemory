@@ -1,0 +1,45 @@
+# Backend OstapMemory — только FastAPI (без фронта, фронт в отдельном контейнере).
+FROM python:3.12-slim-trixie
+
+# uv для установки зависимостей
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Системные зависимости: ffmpeg для аудио (подкасты), build-essential на всякий случай
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV UV_COMPILE_BYTECODE=1
+ENV UV_LINK_MODE=copy
+
+WORKDIR /app
+
+# Сначала зависимости — для кэширования слоёв
+COPY pyproject.toml uv.lock ./
+COPY open_notebook/__init__.py ./open_notebook/__init__.py
+RUN uv sync --frozen --no-dev
+
+# Заранее скачиваем tiktoken-кодировку, чтобы работало офлайн
+ENV TIKTOKEN_CACHE_DIR=/app/tiktoken-cache
+RUN mkdir -p /app/tiktoken-cache && \
+    .venv/bin/python -c "import tiktoken; tiktoken.get_encoding('o200k_base')"
+
+# Код приложения
+COPY . /app
+
+ENV UV_NO_SYNC=1
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Слушаем на всех интерфейсах внутри контейнера; reload выключен в проде
+ENV API_HOST=0.0.0.0
+ENV API_PORT=5055
+ENV API_RELOAD=false
+
+EXPOSE 5055
+
+CMD ["python", "run_api.py"]

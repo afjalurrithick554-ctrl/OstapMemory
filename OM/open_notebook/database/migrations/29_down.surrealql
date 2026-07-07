@@ -1,0 +1,2 @@
+-- Migration 29 rollback: убрать review_notes с таблицы notebook.
+REMOVE FIELD IF EXISTS review_notes ON TABLE notebook;
