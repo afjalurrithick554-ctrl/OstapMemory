@@ -1,0 +1,48 @@
+# === Зависимости ===
+node_modules/
+.pnp
+.pnp.js
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.venv/
+venv/
+env/
+*.egg
+
+# === Сборки фронтенда ===
+dist/
+dist-ssr/
+.vite/
+*.local
+
+# === Базы данных (runtime, восстанавливаются) ===
+surreal_data/
+notebook_data/
+*.sst
+*.db/
+LOG.old.*
+MANIFEST-*
+OPTIONS-*
+
+# === Секреты и окружение ===
+.env
+.env.*
+!.env.example
+
+# === Логи ===
+*.log
+logs/
+
+# === ОС и редакторы ===
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# === Временное / дампы ===
+*.tmp
