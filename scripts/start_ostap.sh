@@ -3,11 +3,11 @@
 # Переходим в корень проекта
 cd "$(dirname "$0")/.."
 
-# Поднимаем Docker-контейнеры в фоновом режиме
-docker compose up -d
+# Поднимаем новый стек OstapMemory (Vue 3) из папки OM/
+docker compose -f OM/docker-compose.yml up -d
 
-# Небольшая пауза, чтобы фронтенд успел подняться
-sleep 2
+# Пауза, чтобы dev-сервер Vite успел подняться
+sleep 5
 
 # Открываем Chrome в режиме веб-приложения (с новым портом 8502)
 google-chrome --app=http://localhost:8502 || xdg-open http://localhost:8502
