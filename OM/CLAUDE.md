@@ -9,7 +9,7 @@
 
 ## Архитектура
 - `frontend/` — Vue 3 + Vite + TS + shadcn-vue + Tailwind (новый, пишем с нуля)
-- `api/`, `open_notebook/` — Python FastAPI backend (копия из `repo/`, развиваем независимо)
+- `api/`, `open_notebook/` — Python FastAPI backend (копия из `_frozen-react-repo/`, развиваем независимо)
 - `docker-compose.yml` — 3 контейнера: frontend (8502), backend (5055), surrealdb (8000)
 - `component-templates/` — эталонные компоненты, перезаписывать только после подтверждения
 
@@ -23,4 +23,4 @@ SurrealDB namespace/database = `ostap_memory`. Чистый старт, том `
 ## Стоп-правила
 - Не запускать параллельных субагентов без утверждённой спеки.
 - Не трогать необратимое (удаление данных, прод) без явного подтверждения.
-- Старый `repo/` не трогаем — он эталон/страховка.
+- Старый `_frozen-react-repo/` (бывш. `repo/`) не трогаем — он эталон/страховка, React-линия заморожена.
